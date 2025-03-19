@@ -21,7 +21,8 @@ def unrest(
     """
     col = len(seq2)
     row = len(seq1)
-    alignment2 = list(seq1)
+    alignment1 = list(seq1)
+    alignment2 = list(seq2)
 
 
     arr = [[0] * (col + 2) for _ in range(row + 2)]
@@ -71,6 +72,7 @@ def unrest(
 
     cost = arr[row + 1][col + 1]
     print(" ".join(alignment2))
+    print(" ".join(alignment1))
     print(cost)
 
 
@@ -80,10 +82,82 @@ def unrest(
             string += f" {arr[i][j]} |"
         print(string)
 
+    retrace( arr, alignment1, alignment2, col, row)
+    alignment1 = "".join(alignment1)
+    alignment2 = "".join(alignment2)
+    print(alignment1)
+    print(alignment2)
 
-    return cost,seq2,seq1
+    return cost,alignment1,alignment2
+
+
+def retrace( arr, alignment1, alignment2,col,row,
+    match_award = -3,
+    indel_penalty = 5,
+    sub_penalty = 1,
+    gap = '-'):
+
+
+    current = (row +1,col+1)
+    
+    while current[0] != 0 and current[1] != 0:
+            i=current[0]
+            j=current[1]
+            print(arr[i][j])
+            if j < 2:
+                letter2 = alignment2[0]
+                delete = float('inf')
+                substitution = float('inf')
+            else:
+                letter2 = alignment2[j - 2]
+                delete = arr[i][j - 1] + indel_penalty
+            if i < 2:
+                letter1 = alignment1[0]
+                insert = float('inf')
+                substitution = float('inf')
+            else:
+                letter1 = alignment1[i - 2]
+                insert = arr[i - 1][j] + indel_penalty
+            if j >= 2 and i >= 2:
+                substitution = arr[i - 1][j - 1] + (match_award if letter1 == letter2 else sub_penalty)
+
+            if substitution <= delete and substitution <= insert:
+                current = (i-1,j-1)
+
+            elif delete <= insert:
+                current = (i,j-1)
+                if i-2 < 0:
+                    temp = alignment1[0]
+                    alignment1[0] = gap
+                    alignment1.insert(1, temp)
+
+                else:
+                    temp = alignment1[i-2]
+                    alignment1[i-2] = gap
+                    alignment1.insert(i-2, temp)
+
+
+
+            else:
+                current = (i-1,j)
+                if j-2 < 0:
+                    temp = alignment2[0]
+                    alignment2[0] = gap
+                    alignment2.insert(1, temp)
+
+                else:
+                    temp = alignment2[j-2]
+                    alignment2[j-2] = gap
+                    alignment2.insert(j-2, temp)
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
-    seq1 =  "AGTCGA"
-    seq2 = "ATCGT"
-    cost = unrest(seq1, seq2)
+    seq1 = 'ATATATATAT'
+    seq2 = 'TATATATATA'
+    cost,alignment1,alignment2 = unrest(seq1, seq2)
