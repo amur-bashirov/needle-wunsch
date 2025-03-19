@@ -32,7 +32,7 @@ def banded(
                 letter1 = alignment1[0]
                 insert = float('inf')
                 substitution = float('inf')
-            else:
+            # try to check if previous len(list) smaller than j:
                 letter1 = alignment1[i - 1]
                 insert = arr[i - 1][j] + indel_penalty
             if j >= 1 and i >= 1:
