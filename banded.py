@@ -3,14 +3,14 @@ def banded(
         seq2: str,
         match_award=-3,
         indel_penalty=5,
-        banded_width=5,
+        banded_width=-1,
         sub_penalty=1,
         gap='-'
 ) -> tuple[float, str | None, str | None]:
 
     col = len(seq1)
     arr = [[0]]
-    d = (banded_width - 1) // 2
+    d = banded_width
 
 
     alignment1 = list(seq1)
@@ -25,7 +25,7 @@ def banded(
             shift = True
             shift_count += 1
         for j in range(d+i+1):
-            if j > len(alignment2) or (shift and j >= banded_width):
+            if j > len(alignment2) or (shift and j >= (2*d+1)):
                 break
             if shift and j + shift_count > len(alignment2):
                 break
@@ -51,10 +51,13 @@ def banded(
     last_col = arr[col]
     cost = arr[col][len(last_col)-1]
 
-    retrace( arr, alignment1, alignment2, col, d, match_award,
+    og_alignment1 = alignment1.copy()
+    og_alignment2 = alignment2.copy()
+
+    retrace(og_alignment1,og_alignment2, arr, alignment1, alignment2, col, d, match_award,
             indel_penalty,
             sub_penalty,
-            gap)
+            gap,)
     alignment1 = "".join(alignment1)
     alignment2 = "".join(alignment2)
 
@@ -126,19 +129,22 @@ def calc_substitution(i,j,arr,letter1,letter2,match_award=-3,sub_penalty=1,shift
 
 
 
-def retrace(arr, alignment1, alignment2, col, d,
+def retrace(og_alignment1,og_alignment2,arr, alignment1, alignment2, col, d,
             match_award=-3,
             indel_penalty=5,
             sub_penalty=1,
-            gap='-'):
+            gap='-',):
     last_col = arr[col]
     current = [ col, len(last_col) - 1]
 
-    shift_count = len(arr) - d
+
+    shift_count = len(arr) - d-1
     while not (current[0] == 0 and current[1] == 0):
         i = current[0]
         j = current[1]
         print(arr[i][j])
+
+
 
         stop_shift = False
         shift = False
@@ -146,12 +152,18 @@ def retrace(arr, alignment1, alignment2, col, d,
             stop_shift = True
         if stop_shift!= True:
             shift = True
-            shift_count -= 1
+
 
 
         insert, letter1 = calc_insert(i, j, arr, alignment1, indel_penalty, shift)
         delete, letter2 = calc_delete(i, j, arr, alignment2, indel_penalty, shift, shift_count)
-        substitution = calc_substitution(i, j, arr, letter1, letter2, match_award, sub_penalty, shift)
+        if shift:
+            letter1_corr = og_alignment1[i - 1]
+            letter2_corr = og_alignment2[j-1 + shift_count]
+        else:
+            letter1_corr = og_alignment1[i - 1]
+            letter2_corr = og_alignment2[j - 1]
+        substitution = calc_substitution(i, j, arr, letter1_corr, letter2_corr, match_award, sub_penalty, shift)
 
 
 
@@ -161,6 +173,7 @@ def retrace(arr, alignment1, alignment2, col, d,
 
             if substitution <= delete and substitution <= insert:
                 current = [i - 1, j]
+                shift_count -= 1
 
             elif delete <= insert:
                 current = [i, j - 1]
@@ -178,6 +191,7 @@ def retrace(arr, alignment1, alignment2, col, d,
 
             else:
                 current = [i - 1, j+1]
+                shift_count -= 1
                 if j - 1 < 0:
                     temp =alignment2[shift_count-1]
                     alignment2[shift_count-1] = gap
@@ -230,7 +244,7 @@ def retrace(arr, alignment1, alignment2, col, d,
 if __name__ == "__main__":
     seq1 = 'GGGGTTTTAAAACCCCTTTT'
     seq2 = 'TTTTAAAACCCCTTTTGGGG'
-    cost, alignment1, alignment2 = banded(seq1, seq2)
+    cost, alignment1, alignment2 = banded(seq1, seq2, banded_width=2)
     print(cost)
     print(alignment1)
     print(alignment2)
