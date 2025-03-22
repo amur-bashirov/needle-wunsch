@@ -3,7 +3,7 @@ def banded(
         seq2: str,
         match_award=-3,
         indel_penalty=5,
-        banded_width=7,
+        banded_width=5,
         sub_penalty=1,
         gap='-'
 ) -> tuple[float, str | None, str | None]:
@@ -16,29 +16,25 @@ def banded(
     alignment1 = list(seq1)
     alignment2 = list(seq2)
 
+    shift_count = 0
     for i in range(col + 1):
+        shift = False
         if i != 0:
             arr.append([])
+        if i >= d+1:
+            shift = True
+            shift_count += 1
         for j in range(d+i+1):
+            if j > len(alignment2) or (shift and j >= banded_width):
+                break
+            if shift and j + shift_count > len(alignment2):
+                break
+            if i == 0 and j == 0: continue
 
-            if j < 1:
-                letter2 = alignment2[0]
-                delete = float('inf')
-                substitution = float('inf')
-            else:
-                letter2 = alignment2[j - 1]
-                delete = arr[i][j - 1] + indel_penalty
-            if i < 1:
-                letter1 = alignment1[0]
-                insert = float('inf')
-                substitution = float('inf')
-            # try to check if previous len(list) smaller than j:
-                letter1 = alignment1[i - 1]
-                insert = arr[i - 1][j] + indel_penalty
-            if j >= 1 and i >= 1:
-                substitution = arr[i - 1][j - 1] + (match_award if letter1 == letter2 else sub_penalty)
-            if i == 0 and j == 0:
-                continue
+            insert, letter1 = calc_insert(i,j,arr,alignment1, indel_penalty,shift)
+            delete, letter2 = calc_delete(i,j,arr,alignment2, indel_penalty,shift, shift_count)
+            substitution = calc_substitution(i,j,arr,letter1,letter2,match_award,sub_penalty,shift)
+
 
 
             if substitution <= delete and substitution <= insert:
@@ -52,73 +48,189 @@ def banded(
                 arr[i].append(insert)
 
 
-    cost = arr[col][d]
+    last_col = arr[col]
+    cost = arr[col][len(last_col)-1]
+
+    retrace( arr, alignment1, alignment2, col, d, match_award,
+            indel_penalty,
+            sub_penalty,
+            gap)
+    alignment1 = "".join(alignment1)
+    alignment2 = "".join(alignment2)
 
     return cost, alignment1, alignment2
 
 
 
 
+def calc_insert(i,j,arr,alignment1, indel_penalty=5,shift=False):
+    if shift:
+        if i < 1:
+            letter1 = alignment1[0]
+            insert = float('inf')
+        elif j >= len(arr[i - 1])-1:
+            letter1 = alignment1[i - 1]
+            insert = float('inf')
+        else:
+            letter1 = alignment1[i - 1]
+            insert = arr[i - 1][j+1] + indel_penalty
 
-def retrace(arr, alignment1, alignment2, col, row,
+        return insert, letter1
+    else:
+        if i < 1 :
+            letter1 = alignment1[0]
+            insert = float('inf')
+        elif j >=len(arr[i - 1])-1:
+            letter1 = alignment1[i - 1]
+            insert = float('inf')
+        else:
+            letter1 = alignment1[i - 1]
+            insert = arr[i - 1][j] + indel_penalty
+
+
+        return insert,letter1
+
+
+
+def calc_delete(i,j,arr,alignment2, indel_penalty=5,shift=False, shift_count=0):
+    if shift:
+        if j<1:
+            letter2 = alignment2[shift_count-1]
+            delete = float('inf')
+        else:
+            letter2 = alignment2[j - 1 + shift_count]
+            delete = arr[i][j - 1] + indel_penalty
+        return delete, letter2
+    else:
+        if j < 1:
+            letter2 = alignment2[0]
+            delete = float('inf')
+        else:
+            letter2 = alignment2[j - 1]
+            delete = arr[i][j - 1] + indel_penalty
+
+        return delete,letter2
+
+
+
+def calc_substitution(i,j,arr,letter1,letter2,match_award=-3,sub_penalty=1,shift=False):
+    if shift:
+        substitution = arr[i - 1][j ] + (match_award if letter1 == letter2 else sub_penalty)
+        return substitution
+    else:
+        if j >= 1 and i >= 1:
+            substitution = arr[i - 1][j - 1] + (match_award if letter1 == letter2 else sub_penalty)
+        else:
+            substitution = float('inf')
+        return substitution
+
+
+
+def retrace(arr, alignment1, alignment2, col, d,
             match_award=-3,
             indel_penalty=5,
             sub_penalty=1,
             gap='-'):
-    current = (row + 1, col + 1)
+    last_col = arr[col]
+    current = [ col, len(last_col) - 1]
 
-    while current[0] != 0 and current[1] != 0:
+    shift_count = len(arr) - d
+    while not (current[0] == 0 and current[1] == 0):
         i = current[0]
         j = current[1]
         print(arr[i][j])
-        if j < 2:
-            letter2 = alignment2[0]
-            delete = float('inf')
-            substitution = float('inf')
-        else:
-            letter2 = alignment2[j - 2]
-            delete = arr[i][j - 1] + indel_penalty
-        if i < 2:
-            letter1 = alignment1[0]
-            insert = float('inf')
-            substitution = float('inf')
-        else:
-            letter1 = alignment1[i - 2]
-            insert = arr[i - 1][j] + indel_penalty
-        if j >= 2 and i >= 2:
-            substitution = arr[i - 1][j - 1] + (match_award if letter1 == letter2 else sub_penalty)
 
-        if substitution <= delete and substitution <= insert:
-            current = (i - 1, j - 1)
+        stop_shift = False
+        shift = False
+        if i < d+1:
+            stop_shift = True
+        if stop_shift!= True:
+            shift = True
+            shift_count -= 1
 
-        elif delete <= insert:
-            current = (i, j - 1)
-            if i - 2 < 0:
-                temp = alignment1[0]
-                alignment1[0] = gap
-                alignment1.insert(1, temp)
 
-            else:
-                temp = alignment1[i - 2]
-                alignment1[i - 2] = gap
-                alignment1.insert(i - 2, temp)
+        insert, letter1 = calc_insert(i, j, arr, alignment1, indel_penalty, shift)
+        delete, letter2 = calc_delete(i, j, arr, alignment2, indel_penalty, shift, shift_count)
+        substitution = calc_substitution(i, j, arr, letter1, letter2, match_award, sub_penalty, shift)
 
 
 
-        else:
-            current = (i - 1, j)
-            if j - 2 < 0:
-                temp = alignment2[0]
-                alignment2[0] = gap
-                alignment2.insert(1, temp)
+
+        if shift:
+
+
+            if substitution <= delete and substitution <= insert:
+                current = [i - 1, j]
+
+            elif delete <= insert:
+                current = [i, j - 1]
+                if i - 1 < 0:
+                    temp = alignment1[0]
+                    alignment1[0] = gap
+                    alignment1.insert(1, temp)
+
+                else:
+                    temp = alignment1[i - 1]
+                    alignment1[i - 1] = gap
+                    alignment1.insert(i - 1, temp)
+
+
 
             else:
-                temp = alignment2[j - 2]
-                alignment2[j - 2] = gap
-                alignment2.insert(j - 2, temp)
+                current = [i - 1, j+1]
+                if j - 1 < 0:
+                    temp =alignment2[shift_count-1]
+                    alignment2[shift_count-1] = gap
+                    alignment2.insert(shift_count, temp)
+
+                else:
+                    temp = alignment2[j - 1 + shift_count]
+                    alignment2[j - 1 + shift_count] = gap
+                    alignment2.insert(j - 1 + shift_count, temp)
+
+
+
+        else:
+
+
+
+            if substitution <= delete and substitution <= insert:
+                current = [i - 1, j - 1]
+
+            elif delete <= insert:
+                current = [i, j - 1]
+                if i - 1 < 0:
+                    temp = alignment1[0]
+                    alignment1[0] = gap
+                    alignment1.insert(1, temp)
+
+                else:
+                    temp = alignment1[i - 1]
+                    alignment1[i - 1] = gap
+                    alignment1.insert(i - 1, temp)
+
+
+
+            else:
+                current = [i - 1, j]
+                if j - 1 < 0:
+                    temp = alignment2[0]
+                    alignment2[0] = gap
+                    alignment2.insert(1, temp)
+
+                else:
+                    temp = alignment2[j ]
+                    alignment2[j] = gap
+                    alignment2.insert(j+1, temp)
+
+
+
 
 
 if __name__ == "__main__":
-    seq1 = 'THARS'
-    seq2 = 'OTHER'
-    banded(seq1, seq2)
+    seq1 = 'GGGGTTTTAAAACCCCTTTT'
+    seq2 = 'TTTTAAAACCCCTTTTGGGG'
+    cost, alignment1, alignment2 = banded(seq1, seq2)
+    print(cost)
+    print(alignment1)
+    print(alignment2)

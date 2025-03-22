@@ -82,7 +82,10 @@ def unrest(
             string += f" {arr[i][j]} |"
         print(string)
 
-    retrace( arr, alignment1, alignment2, col, row)
+    retrace( arr, alignment1, alignment2, col, row, match_award,
+            indel_penalty,
+            sub_penalty,
+            gap)
     alignment1 = "".join(alignment1)
     alignment2 = "".join(alignment2)
     print(alignment1)
@@ -158,6 +161,6 @@ def retrace( arr, alignment1, alignment2,col,row,
 
 
 if __name__ == "__main__":
-    seq1 = 'ATATATATAT'
-    seq2 = 'TATATATATA'
+    seq1 = 'GGGGTTTTAAAACCCCTTTT'
+    seq2 = 'TTTTAAAACCCCTTTTGGGG'
     cost,alignment1,alignment2 = unrest(seq1, seq2)
