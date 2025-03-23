@@ -193,14 +193,14 @@ def retrace(og_alignment1,og_alignment2,arr, alignment1, alignment2, col, d,
                 current = [i - 1, j+1]
                 shift_count -= 1
                 if j - 1 < 0:
-                    temp =alignment2[shift_count-1]
-                    alignment2[shift_count-1] = gap
-                    alignment2.insert(shift_count, temp)
+                    temp =alignment2[j+shift_count]
+                    alignment2[shift_count] = gap
+                    alignment2.insert(j + shift_count, temp)
 
                 else:
-                    temp = alignment2[j - 1 + shift_count]
-                    alignment2[j - 1 + shift_count] = gap
-                    alignment2.insert(j - 1 + shift_count, temp)
+                    temp = alignment2[j  + shift_count]
+                    alignment2[j  + shift_count] = gap
+                    alignment2.insert(j  + shift_count, temp)
 
 
 
