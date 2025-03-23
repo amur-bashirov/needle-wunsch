@@ -50,6 +50,7 @@ def banded(
 
     last_col = arr[col]
     cost = arr[col][len(last_col)-1]
+    print(f'the cost is {cost}')
 
     og_alignment1 = alignment1.copy()
     og_alignment2 = alignment2.copy()
@@ -142,7 +143,6 @@ def retrace(og_alignment1,og_alignment2,arr, alignment1, alignment2, col, d,
     while not (current[0] == 0 and current[1] == 0):
         i = current[0]
         j = current[1]
-        print(arr[i][j])
 
 
 
@@ -242,9 +242,13 @@ def retrace(og_alignment1,og_alignment2,arr, alignment1, alignment2, col, d,
 
 
 if __name__ == "__main__":
-    seq1 = 'GGGGTTTTAAAACCCCTTTT'
-    seq2 = 'TTTTAAAACCCCTTTTGGGG'
-    cost, alignment1, alignment2 = banded(seq1, seq2, banded_width=2)
+    seq1 = (
+            "AGCTGACCTG"
+    )
+    seq2 = (
+            "AGCTTGCATG"
+    )
+    cost, alignment1, alignment2 = banded(seq1, seq2, banded_width=3, sub_penalty=1)
     print(cost)
     print(alignment1)
     print(alignment2)

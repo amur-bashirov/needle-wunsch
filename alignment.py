@@ -1,4 +1,6 @@
 from unrestricted import unrest
+from banded import banded
+import math
 
 def align(
         seq1: str,
@@ -25,12 +27,21 @@ def align(
     if banded_width== -1:
         score, al1,al2 = unrest(seq1,seq2,match_award,indel_penalty,sub_penalty,gap)
     else:
-        pass
+
+        if abs(len(seq1) - len(seq2)) > banded_width:
+            return math.inf, None, None
+
+        score, al1,al2 = banded(seq1,seq2,match_award,indel_penalty,banded_width,sub_penalty,gap)
     return score, al1,al2
 
+
+
 if __name__ == "__main__":
-    seq2 = "OTHER"
-    seq1 = "THARS"
-    cost = align(seq1, seq2)
+    seq1 = 'GGGGTTTTAAAACCCCTTTT'
+    seq2 = 'TTTTAAAACCCCTTTTGGGG'
+    cost, alignment1, alignment2 = banded(seq1, seq2, banded_width=2)
+    print(cost)
+    print(alignment1)
+    print(alignment2)
 
 
